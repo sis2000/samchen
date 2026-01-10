@@ -1,0 +1,844 @@
+import React, { useState } from 'react';
+import { BookOpen, CheckCircle, ChevronRight, FileText, Users, AlertCircle, Ship, DollarSign, Layout, Menu, X, Award, Globe } from 'lucide-react';
+
+// UI 介面翻譯
+const uiTranslations = {
+  zh: {
+    appTitle: "業務 SOP 訓練",
+    appSubtitle: "標準作業流程手冊",
+    chapter: "章節",
+    purpose: "流程目的",
+    step: "流程步驟",
+    role: "職責分工",
+    quiz: "隨堂測驗",
+    roleHeader: "負責角色",
+    respHeader: "主要職責",
+    submit: "提交答案",
+    retry: "重新測驗",
+    score: "得分",
+    perfect: "太棒了！您完全掌握了本章節。",
+    keepTrying: "再接再厲，複習一下內容吧！",
+    noQuiz: "本章節暫無測驗題目。",
+    copyright: "© 2025 業務部教育訓練系統",
+    stepTitle: "步驟",
+    langName: "繁體中文"
+  },
+  vn: {
+    appTitle: "Đào tạo quy trình SOP",
+    appSubtitle: "Sổ tay quy trình thao tác chuẩn",
+    chapter: "Chương",
+    purpose: "Mục đích quy trình",
+    step: "Các bước quy trình",
+    role: "Phân công trách nhiệm",
+    quiz: "Bài kiểm tra",
+    roleHeader: "Vai trò phụ trách",
+    respHeader: "Trách nhiệm chính",
+    submit: "Nộp bài",
+    retry: "Làm lại",
+    score: "Điểm số",
+    perfect: "Tuyệt vời! Bạn đã nắm vững chương này.",
+    keepTrying: "Cố lên, hãy ôn lại nội dung nhé!",
+    noQuiz: "Chương này chưa có bài kiểm tra.",
+    copyright: "© 2025 Hệ thống đào tạo bộ phận Kinh doanh",
+    stepTitle: "Bước",
+    langName: "Tiếng Việt"
+  }
+};
+
+// SOP 資料庫 - 中文版
+const sopDataZh = [
+  {
+    id: 1,
+    title: "第一章：銷樣處理流程",
+    icon: <Layout className="w-5 h-5" />,
+    purpose: "確保銷樣能夠依客人要求，準時、高品質完成，並在內部留下基礎資料。",
+    steps: [
+      { title: "銷樣進度追蹤", desc: "業務每週與樣品室確認銷樣生產進度，定期回報給開發與客人。" },
+      { title: "包材資訊提供", desc: "業務提供包材資訊（吊牌 / PE 袋 / 包裝方式）。" },
+      { title: "文件準備與 Booking", desc: "與出口部門確認 Invoice & Packing List，完成訂艙 (BOOKING)。" },
+      { title: "出貨與交接", desc: "樣品室完成貼標，出口部門出貨。銷樣紙板交給物控進行第一次排版。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "銷樣進度追蹤、提供包材資訊" },
+      { role: "樣品室", responsibility: "依規範完成銷樣與包裝、交付紙板" },
+      { role: "出口部門", responsibility: "準備文件 (Inv/PL)、安排出貨" }
+    ],
+    quiz: [
+      {
+        question: "銷樣紙板最後需要交給誰進行第一次排版？",
+        options: ["業務", "物控", "開發", "採購"],
+        answer: 1 
+      },
+      {
+        question: "誰負責提供銷樣的包材資訊（吊牌/PE袋）？",
+        options: ["樣品室", "業務", "採購", "生管"],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: "第二章：試作管理流程",
+    icon: <FileText className="w-5 h-5" />,
+    purpose: "確保新型體在量產前經過完整試作 (T1-T4)，及時修正設計與生產問題。",
+    steps: [
+      { title: "預告訂單與安排", desc: "收到客人預告訂單，通知生管安排新型體試作。" },
+      { title: "T1 (MF/Fitting)", desc: "基本碼試作。客人確認基本碼板後，安排內部第一支試作。" },
+      { title: "T2 (EX Fitting)", desc: "大中小級試作。樣品室完成放碼，製作大中小試作鞋。" },
+      { title: "T3 (Full Size)", desc: "全尺碼試作。試作組進行全尺碼試作，驗證可否量產。" },
+      { title: "T4 (PPT/首箱)", desc: "首箱試作與確認。與現場配合完成 PPT，與客人最終確認。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "接收預告訂單、追蹤模具/進度、參與檢討" },
+      { role: "生管", responsibility: "安排試作進度、提供進度表" },
+      { role: "樣品室/試作組", responsibility: "執行 T1-T4 試作" }
+    ],
+    quiz: [
+      {
+        question: "哪一個階段是進行「全尺碼試作」？",
+        options: ["T1", "T2", "T3", "T4"],
+        answer: 2
+      },
+      {
+        question: "T1 階段主要是確認什麼？",
+        options: ["全尺碼穿著", "基本碼 MF/Fitting", "大中小級放碼", "首箱確認"],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: "第三章：訂單處理流程",
+    icon: <FileText className="w-5 h-5" />,
+    purpose: "確保訂單準確進入系統，完成 BOM、採購與斬刀費處理。",
+    steps: [
+      { title: "預告訂單管理", desc: "銷樣寄出後追蹤預告訂單。整理總表，討論是否預購。" },
+      { title: "BOM Ready", desc: "正式下單前完成 BOM 核對（材料、用量、供應商）。" },
+      { title: "正式訂單處理", desc: "入系統編指令號 -> 製作 BOM -> 生成採購計劃 -> 發採購單。" },
+      { title: "斬刀費用", desc: "計算費用發給客人確認，並追蹤付款。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "追蹤預告訂單、BOM 核對、輸入正式訂單、斬刀費處理" },
+      { role: "開發", responsibility: "完成 EPR 系統資料導入" },
+      { role: "採購", responsibility: "依據採購單下單" }
+    ],
+    quiz: [
+      {
+        question: "BOM Ready 通常需在何時完成？",
+        options: ["出貨前 1 週", "正式下單前 2 週", "量產開始時", "收到預告訂單當天"],
+        answer: 1
+      },
+      {
+        question: "正式訂單輸入系統並編制指令號需在多久內完成？",
+        options: ["1 天", "3 天", "1 週", "不限時間"],
+        answer: 0
+      }
+    ]
+  },
+  {
+    id: 4,
+    title: "第四章：採購管理流程",
+    icon: <DollarSign className="w-5 h-5" />,
+    purpose: "確保原材料與包材準時、正確到廠，並妥善處理客訴與測試。",
+    steps: [
+      { title: "採購計劃制定", desc: "依據 BOM 與庫存扣減制定計劃。業務協助確認特殊需求。" },
+      { title: "色卡與樣品", desc: "業務需提供色卡與確認樣給廠商。" },
+      { title: "材料交期控制", desc: "布料/副料: 25-30天; 皮料: 30-35天。成型前需提前到廠。" },
+      { title: "客訴與測試", desc: "倉庫提供驗貨報告，業務協助追蹤客訴。必要時安排送測。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "制定初步採購計劃、提供色卡/確認樣、協助客訴" },
+      { role: "採購", responsibility: "執行採購、控制交期、處理材料客訴" },
+      { role: "倉庫", responsibility: "提供材料驗貨報告、安排測試" }
+    ],
+    quiz: [
+      {
+        question: "一般皮料的交期約為多少天？",
+        options: ["10-15 天", "20-25 天", "30-35 天", "45-60 天"],
+        answer: 2
+      },
+      {
+        question: "國外材料需於成型上線前幾天入廠？",
+        options: ["10 天", "15 天", "25 天", "30 天"],
+        answer: 3
+      }
+    ]
+  },
+  {
+    id: 5,
+    title: "第五章：量產標準流程",
+    icon: <Users className="w-5 h-5" />,
+    purpose: "確保大貨生產準時完成，並及時處理異常。",
+    steps: [
+      { title: "出貨時間確認", desc: "業務與生管確認時間，回覆客人。" },
+      { title: "量產明細", desc: "業務處理系統量產明細表，分發至生產單位。" },
+      { title: "進度與異常", desc: "生管每日追蹤。異常需即時回報，重大異常需通知客人。" },
+      { title: "量產交接", desc: "生產完成 -> 生管確認 -> 移交成品倉庫 -> 準備驗貨。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "確認出貨時間、提供量產明細表、協調異常" },
+      { role: "生管", responsibility: "每日追蹤進度、開立異常回饋" },
+      { role: "生產單位", responsibility: "執行生產、回報異常、移交成品" }
+    ],
+    quiz: [
+      {
+        question: "當發生重大生產異常影響交期時，應如何處理？",
+        options: ["自行解決不通知", "只通知廠長", "需回報客人並提出調整計劃", "等出貨當天再說"],
+        answer: 2
+      }
+    ]
+  },
+  {
+    id: 6,
+    title: "第六章：驗貨標準流程",
+    icon: <CheckCircle className="w-5 h-5" />,
+    purpose: "透過內部與客人驗貨機制，確保出貨品質。",
+    steps: [
+      { title: "驗貨排程", desc: "業務依成品倉滿單資料安排客人驗貨時間。" },
+      { title: "驗貨標準", desc: "依據 AQL 標準。檢查外觀、功能、尺碼、包裝。" },
+      { title: "不良品處理", desc: "現場返工或補膠。重大不良由業務回覆客人。" },
+      { title: "驗貨報告", desc: "客人出具報告，業務整理改善方案並歸檔。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "安排驗貨時間、回覆重大不良處理、整理改善方案" },
+      { role: "品管 (QC/QA)", responsibility: "執行驗貨、追蹤返工" },
+      { role: "成品倉", responsibility: "準備驗貨室、協助驗貨" }
+    ],
+    quiz: [
+      {
+        question: "誰負責安排客人的驗貨時間？",
+        options: ["品管", "生管", "業務", "警衛"],
+        answer: 2
+      },
+      {
+        question: "驗貨範疇通常不包含下列哪項？",
+        options: ["外觀檢查", "功能檢測", "員工薪資核對", "包裝檢查"],
+        answer: 2
+      }
+    ]
+  },
+  {
+    id: 7,
+    title: "第七章：BOOKING & 出貨流程",
+    icon: <Ship className="w-5 h-5" />,
+    purpose: "確保大貨準時出貨，並正確完成文件與系統更新。",
+    steps: [
+      { title: "訂艙 (BOOKING)", desc: "進出口部門依出貨計劃訂艙，確認艙位/船期。" },
+      { title: "出貨檢查", desc: "成品倉檢查包裝、標籤、箱數。業務/品管確認無誤。" },
+      { title: "文件製作", desc: "製作 Invoice, Packing List, B/L。與客人確認內容。" },
+      { title: "系統更新", desc: "出貨後更新系統，通知客人並提供文件。" }
+    ],
+    roles: [
+      { role: "進出口部門", responsibility: "訂艙、製作文件、追蹤船期、系統更新" },
+      { role: "成品倉", responsibility: "出貨檢查、安排裝櫃" },
+      { role: "業務", responsibility: "確認出貨內容符合客人要求、通知客人" }
+    ],
+    quiz: [
+      {
+        question: "訂艙 (BOOKING) 主要由哪個部門負責？",
+        options: ["業務部", "進出口部門", "採購部", "財務部"],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 8,
+    title: "第八章：貨款追蹤 & 客訴",
+    icon: <AlertCircle className="w-5 h-5" />,
+    purpose: "確保貨款回收，並有效處理客訴以避免重複發生。",
+    steps: [
+      { title: "貨款追蹤", desc: "依合約 (T/T, L/C) 追蹤。逾期未付需提醒客人並上報。" },
+      { title: "客訴建立", desc: "收到反饋 -> 業務建立客訴單。" },
+      { title: "調查與改善", desc: "品管/生產調查原因 -> 提出改善方案 -> 業務回覆客人。" },
+      { title: "改善追蹤", desc: "後續訂單驗證是否解決問題。" }
+    ],
+    roles: [
+      { role: "業務", responsibility: "追蹤貨款、建立客訴單、回覆客人" },
+      { role: "品管", responsibility: "調查客訴原因、追蹤改善措施" },
+      { role: "財務", responsibility: "確認帳款狀態" }
+    ],
+    quiz: [
+      {
+        question: "收到客人客訴後，業務的第一個動作是？",
+        options: ["立即退款", "建立客訴單並記錄問題", "責罵生產線", "置之不理"],
+        answer: 1
+      },
+      {
+        question: "貨款追蹤主要依據什麼條件？",
+        options: ["口頭約定", "合約條件 (T/T, L/C 等)", "心情好壞", "天氣狀況"],
+        answer: 1
+      }
+    ]
+  }
+];
+
+// SOP 資料庫 - 越南文版
+const sopDataVn = [
+  {
+    id: 1,
+    title: "Chương 1: Quy trình xử lý mẫu Sales",
+    icon: <Layout className="w-5 h-5" />,
+    purpose: "Đảm bảo mẫu Sales hoàn thành đúng hạn, đạt chất lượng theo yêu cầu khách hàng và lưu trữ dữ liệu cơ bản.",
+    steps: [
+      { title: "Theo dõi tiến độ mẫu Sales", desc: "Kinh doanh (Sales) xác nhận tiến độ với Phòng mẫu hàng tuần, báo cáo cho Phát triển (Dev) và Khách hàng." },
+      { title: "Cung cấp thông tin đóng gói", desc: "Kinh doanh cung cấp thông tin đóng gói (Thẻ bài / Túi PE / Cách đóng gói)." },
+      { title: "Chứng từ & Booking", desc: "Xác nhận Invoice & Packing List với bộ phận Xuất nhập khẩu, hoàn tất đặt tàu (Booking)." },
+      { title: "Xuất hàng & Bàn giao", desc: "Phòng mẫu dán tem, Xuất nhập khẩu xuất hàng. Bìa rập mẫu Sales giao cho MC (Vật tư) để làm định mức lần 1." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Theo dõi tiến độ, cung cấp thông tin đóng gói" },
+      { role: "Phòng mẫu", responsibility: "Hoàn thiện mẫu & đóng gói, bàn giao rập" },
+      { role: "Xuất nhập khẩu", responsibility: "Chuẩn bị chứng từ (Inv/PL), sắp xếp xuất hàng" }
+    ],
+    quiz: [
+      {
+        question: "Bìa rập mẫu Sales cuối cùng cần giao cho ai để làm định mức lần 1?",
+        options: ["Kinh doanh (Sales)", "Vật tư (MC)", "Phát triển (Dev)", "Thu mua (PUR)"],
+        answer: 1 
+      },
+      {
+        question: "Ai chịu trách nhiệm cung cấp thông tin đóng gói (Thẻ bài/Túi PE)?",
+        options: ["Phòng mẫu", "Kinh doanh (Sales)", "Thu mua (PUR)", "Quản lý sản xuất (PMC)"],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: "Chương 2: Quy trình làm mẫu thử (Trial)",
+    icon: <FileText className="w-5 h-5" />,
+    purpose: "Đảm bảo giày mới được thử nghiệm đầy đủ (T1-T4) trước khi sản xuất đại trà, kịp thời sửa lỗi thiết kế và sản xuất.",
+    steps: [
+      { title: "Đơn hàng dự kiến & Sắp xếp", desc: "Nhận đơn dự kiến (Forecast), báo PMC sắp xếp làm mẫu thử cho hình thể mới." },
+      { title: "T1 (MF/Fitting)", desc: "Làm mẫu size chuẩn. Sau khi khách xác nhận rập size chuẩn -> làm mẫu thử nội bộ lần 1." },
+      { title: "T2 (EX Fitting)", desc: "Làm mẫu nhảy size (Đại/Trung/Tiểu). Phòng mẫu nhảy size -> làm giày mẫu các size này." },
+      { title: "T3 (Full Size)", desc: "Làm mẫu full size. Tổ mẫu thử thực hiện full size để kiểm chứng khả năng sản xuất đại trà." },
+      { title: "T4 (PPT/Hộp đầu)", desc: "Làm mẫu PPT/Hộp đầu chuyền. Phối hợp với xưởng sản xuất hoàn thành PPT, xác nhận lần cuối với khách." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Nhận Forecast, theo dõi khuôn/tiến độ, tham gia kiểm thảo" },
+      { role: "PMC", responsibility: "Sắp xếp lịch làm mẫu thử, cung cấp bảng tiến độ" },
+      { role: "Phòng mẫu/Tổ mẫu thử", responsibility: "Thực hiện làm mẫu T1-T4" }
+    ],
+    quiz: [
+      {
+        question: "Giai đoạn nào thực hiện làm mẫu thử \"Full size\"?",
+        options: ["T1", "T2", "T3", "T4"],
+        answer: 2
+      },
+      {
+        question: "Giai đoạn T1 chủ yếu để xác nhận điều gì?",
+        options: ["Mặc thử full size", "Size chuẩn MF/Fitting", "Nhảy size Đại/Trung/Tiểu", "Xác nhận hộp đầu chuyền"],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: "Chương 3: Quy trình xử lý đơn hàng",
+    icon: <FileText className="w-5 h-5" />,
+    purpose: "Đảm bảo đơn hàng được nhập hệ thống chính xác, hoàn tất BOM, Thu mua và xử lý khuôn dao.",
+    steps: [
+      { title: "Quản lý đơn dự kiến", desc: "Theo dõi đơn dự kiến sau khi gửi mẫu Sales. Tổng hợp và thảo luận xem có cần mua trước vật tư không." },
+      { title: "BOM Ready", desc: "Hoàn tất đối chiếu BOM trước khi nhận đơn chính thức (Vật liệu, định mức, nhà cung cấp)." },
+      { title: "Xử lý đơn chính thức", desc: "Nhập hệ thống tạo chỉ lệnh -> Làm BOM -> Tạo kế hoạch mua hàng -> Phát đơn mua hàng (PO)." },
+      { title: "Chi phí khuôn dao", desc: "Tính toán chi phí gửi khách xác nhận và theo dõi thanh toán." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Theo dõi đơn dự kiến, check BOM, nhập đơn chính thức, xử lý khuôn dao" },
+      { role: "Phát triển", responsibility: "Hoàn tất dữ liệu hệ thống EPR" },
+      { role: "Thu mua", responsibility: "Đặt hàng dựa trên PO" }
+    ],
+    quiz: [
+      {
+        question: "BOM Ready thường cần hoàn thành khi nào?",
+        options: ["1 tuần trước khi xuất hàng", "2 tuần trước khi có đơn chính thức", "Khi bắt đầu sản xuất", "Ngay khi nhận đơn dự kiến"],
+        answer: 1
+      },
+      {
+        question: "Việc nhập đơn hàng chính thức và tạo chỉ lệnh cần hoàn thành trong bao lâu?",
+        options: ["1 ngày", "3 ngày", "1 tuần", "Không giới hạn"],
+        answer: 0
+      }
+    ]
+  },
+  {
+    id: 4,
+    title: "Chương 4: Quy trình quản lý thu mua",
+    icon: <DollarSign className="w-5 h-5" />,
+    purpose: "Đảm bảo nguyên vật liệu về nhà máy đúng hạn, đúng chất lượng, xử lý khiếu nại và test vật tư.",
+    steps: [
+      { title: "Lập kế hoạch mua hàng", desc: "Dựa trên BOM và trừ tồn kho để lập kế hoạch. Kinh doanh hỗ trợ xác nhận nhu cầu đặc biệt." },
+      { title: "Bảng màu & Mẫu đối", desc: "Kinh doanh cung cấp bảng màu và mẫu đối cho nhà cung cấp." },
+      { title: "Kiểm soát giao hàng", desc: "Vải/Phụ liệu: 25-30 ngày; Da: 30-35 ngày. Phải về xưởng trước khi gò (thành hình)." },
+      { title: "Khiếu nại & Test", desc: "Kho cung cấp báo cáo kiểm hàng, Kinh doanh hỗ trợ theo dõi khiếu nại. Sắp xếp đi test nếu cần." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Lập kế hoạch mua ban đầu, cung cấp bảng màu/mẫu đối" },
+      { role: "Thu mua", responsibility: "Mua hàng, kiểm soát giao hàng, xử lý khiếu nại vật tư" },
+      { role: "Kho", responsibility: "Cung cấp báo cáo kiểm vật tư, sắp xếp đi test" }
+    ],
+    quiz: [
+      {
+        question: "Thời gian giao hàng (Lead time) thông thường của Da là bao nhiêu ngày?",
+        options: ["10-15 ngày", "20-25 ngày", "30-35 ngày", "45-60 ngày"],
+        answer: 2
+      },
+      {
+        question: "Vật tư nước ngoài cần về xưởng trước khi lên chuyền Gò bao nhiêu ngày?",
+        options: ["10 ngày", "15 ngày", "25 ngày", "30 ngày"],
+        answer: 3
+      }
+    ]
+  },
+  {
+    id: 5,
+    title: "Chương 5: Quy trình sản xuất đại trà",
+    icon: <Users className="w-5 h-5" />,
+    purpose: "Đảm bảo sản xuất đại trà đúng tiến độ và xử lý kịp thời các bất thường.",
+    steps: [
+      { title: "Xác nhận lịch xuất", desc: "Kinh doanh và PMC xác nhận thời gian, trả lời khách hàng." },
+      { title: "Chi tiết sản xuất", desc: "Kinh doanh xử lý bảng chi tiết sản xuất trên hệ thống, phân phát cho các đơn vị." },
+      { title: "Tiến độ & Bất thường", desc: "PMC theo dõi hàng ngày. Bất thường phải báo ngay, nếu nghiêm trọng phải báo khách." },
+      { title: "Bàn giao sản lượng", desc: "Sản xuất xong -> PMC xác nhận -> Chuyển kho thành phẩm -> Chuẩn bị kiểm hàng." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Xác nhận lịch xuất, cung cấp chi tiết sản xuất, điều phối bất thường" },
+      { role: "PMC", responsibility: "Theo dõi tiến độ, lập phiếu phản hồi bất thường" },
+      { role: "Sản xuất (Chặt/May/Gò)", responsibility: "Thực hiện sản xuất, báo cáo bất thường, bàn giao thành phẩm" }
+    ],
+    quiz: [
+      {
+        question: "Khi có bất thường nghiêm trọng ảnh hưởng đến giao hàng, cần xử lý thế nào?",
+        options: ["Tự giải quyết không báo", "Chỉ báo Quản đốc", "Phải báo khách hàng và đề xuất kế hoạch điều chỉnh", "Đợi đến ngày xuất hàng mới nói"],
+        answer: 2
+      }
+    ]
+  },
+  {
+    id: 6,
+    title: "Chương 6: Quy trình kiểm hàng (Inspection)",
+    icon: <CheckCircle className="w-5 h-5" />,
+    purpose: "Thông qua cơ chế kiểm hàng nội bộ và khách hàng để đảm bảo chất lượng xuất hàng.",
+    steps: [
+      { title: "Lịch kiểm hàng", desc: "Kinh doanh sắp xếp lịch kiểm hàng với khách dựa trên thông tin hàng xong từ Kho thành phẩm." },
+      { title: "Tiêu chuẩn kiểm hàng", desc: "Dựa trên AQL. Kiểm tra ngoại quan, chức năng, kích cỡ, đóng gói." },
+      { title: "Xử lý hàng lỗi", desc: "Xưởng sửa lại hoặc bù keo. Lỗi nghiêm trọng Kinh doanh phải báo khách." },
+      { title: "Báo cáo kiểm hàng", desc: "Khách xuất báo cáo, Kinh doanh tổng hợp phương án cải thiện và lưu hồ sơ." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Sắp xếp lịch kiểm hàng, phản hồi lỗi nghiêm trọng, tổng hợp cải thiện" },
+      { role: "QC/QA", responsibility: "Thực hiện kiểm hàng, theo dõi sửa hàng" },
+      { role: "Kho thành phẩm", responsibility: "Chuẩn bị phòng kiểm hàng, hỗ trợ kiểm hàng" }
+    ],
+    quiz: [
+      {
+        question: "Ai chịu trách nhiệm sắp xếp lịch kiểm hàng với khách?",
+        options: ["QC/QA", "PMC", "Kinh doanh", "Bảo vệ"],
+        answer: 2
+      },
+      {
+        question: "Phạm vi kiểm hàng thường KHÔNG bao gồm mục nào?",
+        options: ["Kiểm tra ngoại quan", "Kiểm tra chức năng", "Kiểm tra lương công nhân", "Kiểm tra đóng gói"],
+        answer: 2
+      }
+    ]
+  },
+  {
+    id: 7,
+    title: "Chương 7: Quy trình Booking & Xuất hàng",
+    icon: <Ship className="w-5 h-5" />,
+    purpose: "Đảm bảo xuất hàng đúng hạn, hoàn tất chứng từ và cập nhật hệ thống chính xác.",
+    steps: [
+      { title: "Đặt tàu (BOOKING)", desc: "Xuất nhập khẩu đặt tàu dựa trên kế hoạch xuất hàng, xác nhận chỗ/lịch tàu." },
+      { title: "Kiểm tra xuất hàng", desc: "Kho thành phẩm kiểm tra bao bì, tem, số thùng. Kinh doanh/QC xác nhận lại." },
+      { title: "Làm chứng từ", desc: "Làm Invoice, Packing List, B/L. Xác nhận nội dung với khách." },
+      { title: "Cập nhật hệ thống", desc: "Sau khi xuất hàng, cập nhật hệ thống, thông báo khách và gửi chứng từ." }
+    ],
+    roles: [
+      { role: "Xuất nhập khẩu", responsibility: "Đặt tàu, làm chứng từ, theo dõi lịch tàu, cập nhật hệ thống" },
+      { role: "Kho thành phẩm", responsibility: "Kiểm tra xuất hàng, sắp xếp đóng container" },
+      { role: "Kinh doanh", responsibility: "Xác nhận nội dung xuất hàng đúng yêu cầu khách, thông báo khách" }
+    ],
+    quiz: [
+      {
+        question: "Việc đặt tàu (BOOKING) chủ yếu do bộ phận nào phụ trách?",
+        options: ["Kinh doanh", "Xuất nhập khẩu", "Thu mua", "Tài chính"],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 8,
+    title: "Chương 8: Theo dõi tiền hàng & Khiếu nại",
+    icon: <AlertCircle className="w-5 h-5" />,
+    purpose: "Đảm bảo thu hồi tiền hàng và xử lý khiếu nại hiệu quả để tránh lặp lại.",
+    steps: [
+      { title: "Theo dõi tiền hàng", desc: "Theo dõi dựa trên hợp đồng (T/T, L/C). Quá hạn phải nhắc khách và báo cáo." },
+      { title: "Tạo đơn khiếu nại", desc: "Nhận phản hồi -> Kinh doanh tạo đơn khiếu nại." },
+      { title: "Điều tra & Cải thiện", desc: "QC/Sản xuất điều tra nguyên nhân -> Đề xuất cải thiện -> Kinh doanh trả lời khách." },
+      { title: "Theo dõi cải thiện", desc: "Các đơn hàng sau kiểm chứng xem đã khắc phục chưa." }
+    ],
+    roles: [
+      { role: "Kinh doanh", responsibility: "Theo dõi tiền hàng, tạo đơn khiếu nại, trả lời khách" },
+      { role: "QC/QA", responsibility: "Điều tra nguyên nhân khiếu nại, theo dõi biện pháp cải thiện" },
+      { role: "Tài chính", responsibility: "Xác nhận trạng thái tiền về" }
+    ],
+    quiz: [
+      {
+        question: "Sau khi nhận khiếu nại từ khách, hành động đầu tiên của Kinh doanh là gì?",
+        options: ["Hoàn tiền ngay lập tức", "Tạo đơn khiếu nại và ghi nhận vấn đề", "Mắng chuyền sản xuất", "Lờ đi"],
+        answer: 1
+      },
+      {
+        question: "Việc theo dõi tiền hàng chủ yếu dựa trên điều kiện gì?",
+        options: ["Thỏa thuận miệng", "Điều kiện hợp đồng (T/T, L/C...)", "Tâm trạng vui buồn", "Thời tiết"],
+        answer: 1
+      }
+    ]
+  }
+];
+
+const TrainingApp = () => {
+  const [lang, setLang] = useState('zh'); // 'zh' for Chinese, 'vn' for Vietnamese
+  
+  // Select data based on language
+  const currentSopData = lang === 'zh' ? sopDataZh : sopDataVn;
+  const t = uiTranslations[lang];
+
+  const [activeChapter, setActiveChapter] = useState(currentSopData[0]);
+  const [activeTab, setActiveTab] = useState('content'); // content, roles, quiz
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [showResult, setShowResult] = useState(false);
+
+  // Update active chapter when language changes to maintain index but switch content
+  React.useEffect(() => {
+    const currentIndex = activeChapter.id - 1;
+    if (currentSopData[currentIndex]) {
+      setActiveChapter(currentSopData[currentIndex]);
+    }
+  }, [lang]);
+
+  const handleChapterClick = (chapter) => {
+    setActiveChapter(chapter);
+    setActiveTab('content');
+    setQuizAnswers({});
+    setShowResult(false);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleQuizOptionClick = (questionIndex, optionIndex) => {
+    if (showResult) return;
+    setQuizAnswers({
+      ...quizAnswers,
+      [questionIndex]: optionIndex
+    });
+  };
+
+  const calculateScore = () => {
+    if (!activeChapter.quiz) return 0;
+    let correct = 0;
+    activeChapter.quiz.forEach((q, idx) => {
+      if (quizAnswers[idx] === q.answer) correct++;
+    });
+    return correct;
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-800 overflow-hidden">
+      {/* Sidebar - Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar */}
+      <div 
+        className={`fixed md:relative z-30 w-72 h-full bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } flex flex-col`}
+      >
+        <div className="p-6 border-b border-gray-100 flex flex-col bg-blue-600 text-white">
+          <div className="flex justify-between items-center w-full">
+            <div>
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <BookOpen size={24} />
+                {t.appTitle}
+              </h1>
+              <p className="text-blue-100 text-xs mt-1">{t.appSubtitle}</p>
+            </div>
+            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-white">
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+          {currentSopData.map((chapter) => (
+            <button
+              key={chapter.id}
+              onClick={() => handleChapterClick(chapter)}
+              className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${
+                activeChapter.id === chapter.id
+                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600 shadow-sm'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              <div className={`${activeChapter.id === chapter.id ? 'text-blue-600' : 'text-gray-400'}`}>
+                {chapter.icon}
+              </div>
+              <span className="font-medium text-sm line-clamp-2">{chapter.title}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-gray-100 text-xs text-gray-400 text-center">
+          {t.copyright}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
+        {/* Top Bar (Mobile Only) */}
+        <div className="md:hidden bg-white p-4 border-b border-gray-200 flex justify-between items-center shadow-sm z-10">
+          <button onClick={() => setSidebarOpen(true)} className="text-gray-600">
+            <Menu size={24} />
+          </button>
+          <span className="font-bold text-gray-700 truncate ml-2 flex-1">{activeChapter.title}</span>
+          <button 
+            onClick={() => setLang(lang === 'zh' ? 'vn' : 'zh')}
+            className="flex items-center gap-1 text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200"
+          >
+            {lang === 'zh' ? 'VN' : '中'}
+          </button>
+        </div>
+
+        {/* Header Section (Desktop) */}
+        <header className="bg-white px-8 py-6 border-b border-gray-200 shadow-sm hidden md:block">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                {activeChapter.icon}
+                {activeChapter.title}
+              </h2>
+              <p className="mt-2 text-gray-600 max-w-3xl">{activeChapter.purpose}</p>
+            </div>
+            <div className="flex flex-col items-end gap-3 ml-4">
+              <button 
+                onClick={() => setLang(lang === 'zh' ? 'vn' : 'zh')}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm"
+              >
+                <Globe size={16} />
+                <span>{lang === 'zh' ? 'Tiếng Việt' : '繁體中文'}</span>
+              </button>
+              <div className="bg-blue-50 px-4 py-2 rounded-full text-blue-700 text-sm font-semibold border border-blue-100 whitespace-nowrap">
+                {t.chapter} {activeChapter.id} / {currentSopData.length}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Tabs */}
+        <div className="bg-white px-4 md:px-8 border-b border-gray-200 flex gap-6 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setActiveTab('content')}
+            className={`py-4 px-2 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'content'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Layout size={16} />
+            {t.step}
+          </button>
+          <button
+            onClick={() => setActiveTab('roles')}
+            className={`py-4 px-2 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'roles'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Users size={16} />
+            {t.role}
+          </button>
+          <button
+            onClick={() => setActiveTab('quiz')}
+            className={`py-4 px-2 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'quiz'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Award size={16} />
+            {t.quiz}
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50">
+          <div className="max-w-4xl mx-auto">
+            
+            {/* TAB: CONTENT */}
+            {activeTab === 'content' && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+                  <h3 className="text-blue-800 font-bold mb-1">{t.purpose}</h3>
+                  <p className="text-blue-700 text-sm">{activeChapter.purpose}</p>
+                </div>
+
+                <div className="grid gap-6">
+                  {activeChapter.steps.map((step, index) => (
+                    <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="flex">
+                        <div className="bg-blue-600 w-2 shrink-0"></div>
+                        <div className="p-5 flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm shrink-0">
+                              {index + 1}
+                            </span>
+                            <h3 className="font-bold text-lg text-gray-800">{step.title}</h3>
+                          </div>
+                          <p className="text-gray-600 ml-11 leading-relaxed">{step.desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: ROLES */}
+            {activeTab === 'roles' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-4 font-semibold text-gray-700 w-1/3">{t.roleHeader}</th>
+                      <th className="px-6 py-4 font-semibold text-gray-700">{t.respHeader}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {activeChapter.roles.map((role, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700">
+                            {role.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {role.responsibility}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TAB: QUIZ */}
+            {activeTab === 'quiz' && (
+              <div className="max-w-2xl mx-auto animate-fade-in">
+                {!activeChapter.quiz || activeChapter.quiz.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">
+                    {t.noQuiz}
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {activeChapter.quiz.map((q, qIdx) => (
+                      <div key={qIdx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h4 className="font-bold text-lg mb-4 flex gap-2">
+                          <span className="text-blue-500">Q{qIdx + 1}.</span> 
+                          {q.question}
+                        </h4>
+                        <div className="space-y-3">
+                          {q.options.map((option, oIdx) => {
+                            let optionClass = "w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex justify-between items-center ";
+                            
+                            if (showResult) {
+                              if (oIdx === q.answer) {
+                                optionClass += "border-green-500 bg-green-50 text-green-700 font-medium";
+                              } else if (quizAnswers[qIdx] === oIdx) {
+                                optionClass += "border-red-500 bg-red-50 text-red-700";
+                              } else {
+                                optionClass += "border-gray-100 text-gray-400 opacity-60";
+                              }
+                            } else {
+                              if (quizAnswers[qIdx] === oIdx) {
+                                optionClass += "border-blue-500 bg-blue-50 text-blue-700";
+                              } else {
+                                optionClass += "border-gray-100 hover:border-blue-200 hover:bg-gray-50";
+                              }
+                            }
+
+                            return (
+                              <button
+                                key={oIdx}
+                                onClick={() => handleQuizOptionClick(qIdx, oIdx)}
+                                className={optionClass}
+                                disabled={showResult}
+                              >
+                                <span>{option}</span>
+                                {showResult && oIdx === q.answer && <CheckCircle className="text-green-600 w-5 h-5" />}
+                                {showResult && quizAnswers[qIdx] === oIdx && oIdx !== q.answer && <X className="text-red-600 w-5 h-5" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex justify-center pt-4">
+                      {!showResult ? (
+                        <button
+                          onClick={() => setShowResult(true)}
+                          disabled={Object.keys(quizAnswers).length !== activeChapter.quiz.length}
+                          className={`px-8 py-3 rounded-full font-bold shadow-lg transition-transform transform active:scale-95 ${
+                            Object.keys(quizAnswers).length === activeChapter.quiz.length
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {t.submit}
+                        </button>
+                      ) : (
+                        <div className="text-center">
+                          <div className="text-3xl font-bold mb-2 text-gray-800">
+                            {t.score}：<span className={calculateScore() === activeChapter.quiz.length ? 'text-green-600' : 'text-blue-600'}>
+                              {calculateScore()} / {activeChapter.quiz.length}
+                            </span>
+                          </div>
+                          <p className="text-gray-500 mb-4">
+                            {calculateScore() === activeChapter.quiz.length 
+                              ? t.perfect 
+                              : t.keepTrying}
+                          </p>
+                          <button
+                            onClick={() => {
+                              setQuizAnswers({});
+                              setShowResult(false);
+                            }}
+                            className="text-blue-600 font-semibold hover:text-blue-800 underline"
+                          >
+                            {t.retry}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default TrainingApp;
