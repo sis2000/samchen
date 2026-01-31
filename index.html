@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Viewport optimized for mobile: prevents accidental zooming for app-like feel -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>業務 SOP 教育訓練系統</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -10,10 +11,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Chosen Palette: Business Blue & Warm Neutral -->
-    <!-- Application Structure Plan: Dashboard layout. 'Analysis' tab features a Time Management Table and Responsibility Matrix. -->
+    <!-- Application Structure Plan: Dashboard layout. 'Analysis' tab features a Time Management Table and Responsibility Matrix. Includes LocalStorage for progress tracking. -->
     
     <style>
-        body { font-family: 'Segoe UI', Microsoft JhengHei, sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Segoe UI', Microsoft JhengHei, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         /* Hide scrollbar for clean UI */
@@ -36,16 +37,19 @@
                 <h1 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-book-open"></i> <span id="app-title">業務 SOP 訓練</span></h1>
                 <p class="text-slate-400 text-xs mt-1" id="app-subtitle">標準作業流程手冊</p>
             </div>
-            <button onclick="toggleSidebar()" class="md:hidden text-white hover:text-gray-300 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
+            <button onclick="toggleSidebar()" class="md:hidden text-white hover:text-gray-300 focus:outline-none p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         
         <nav id="nav-list" class="flex-1 overflow-y-auto p-4 space-y-2">
             <!-- Navigation items injected by JS -->
         </nav>
 
-        <div class="p-4 border-t border-gray-100 bg-slate-50 shrink-0">
-            <button onclick="toggleLang()" class="w-full py-2 px-4 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <div class="p-4 border-t border-gray-100 bg-slate-50 shrink-0 space-y-3">
+            <button onclick="toggleLang()" class="w-full py-2.5 px-4 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors focus:outline-none active:bg-gray-100">
                 <i class="fas fa-globe text-blue-500"></i> <span id="lang-btn-text">Switch to Vietnamese</span>
+            </button>
+            <button onclick="resetProgress()" class="w-full py-2 px-4 text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center justify-center gap-1">
+                <i class="fas fa-trash-alt"></i> <span data-key="resetProgress">重置學習進度</span>
             </button>
         </div>
     </aside>
@@ -53,12 +57,12 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full w-full overflow-hidden bg-gray-50">
         <!-- Top Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10 shrink-0">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none"><i class="fas fa-bars text-xl"></i></button>
+        <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10 shrink-0 h-16">
+            <div class="flex items-center gap-4 overflow-hidden">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none p-1"><i class="fas fa-bars text-xl"></i></button>
                 <div class="overflow-hidden">
-                    <h2 id="chapter-title" class="text-2xl font-bold text-slate-800 truncate"></h2>
-                    <p id="chapter-purpose" class="text-sm text-slate-500 hidden md:block mt-1 truncate"></p>
+                    <h2 id="chapter-title" class="text-lg md:text-2xl font-bold text-slate-800 truncate"></h2>
+                    <p id="chapter-purpose" class="text-xs md:text-sm text-slate-500 hidden md:block mt-1 truncate"></p>
                 </div>
             </div>
             <div class="text-right shrink-0 ml-2">
@@ -68,19 +72,19 @@
 
         <!-- Tabs -->
         <div class="bg-white px-6 border-b border-gray-200 flex gap-8 overflow-x-auto no-scrollbar shrink-0">
-            <button onclick="switchTab('content')" id="tab-content" class="tab-btn py-4 border-b-2 border-blue-600 text-blue-600 font-medium flex items-center gap-2 whitespace-nowrap focus:outline-none">
+            <button onclick="switchTab('content')" id="tab-content" class="tab-btn py-4 border-b-2 border-blue-600 text-blue-600 font-medium flex items-center gap-2 whitespace-nowrap focus:outline-none touch-manipulation">
                 <i class="fas fa-list-ol"></i> <span data-key="tabStep">流程步驟</span>
             </button>
-            <button onclick="switchTab('analysis')" id="tab-analysis" class="tab-btn py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 whitespace-nowrap focus:outline-none">
+            <button onclick="switchTab('analysis')" id="tab-analysis" class="tab-btn py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 whitespace-nowrap focus:outline-none touch-manipulation">
                 <i class="fas fa-table"></i> <span data-key="tabAnalysis">時程與職責</span>
             </button>
-            <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 whitespace-nowrap focus:outline-none">
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 whitespace-nowrap focus:outline-none touch-manipulation">
                 <i class="fas fa-question-circle"></i> <span data-key="tabQuiz">隨堂測驗</span>
             </button>
         </div>
 
         <!-- Scrollable Content Area -->
-        <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+        <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth pb-20 md:pb-8">
             
             <!-- Section: Process Steps (Text Content) -->
             <section id="view-content" class="max-w-4xl mx-auto fade-in pb-10">
@@ -180,7 +184,7 @@
                         </div>
 
                         <div class="mt-8 flex justify-center">
-                            <button id="submit-quiz-btn" onclick="submitQuiz()" class="w-full sm:w-auto px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100" data-key="submitBtn">
+                            <button id="submit-quiz-btn" onclick="submitQuiz()" class="w-full sm:w-auto px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 touch-manipulation" data-key="submitBtn">
                                 提交答案
                             </button>
                         </div>
@@ -213,7 +217,8 @@
                 retryBtn: "重新測驗",
                 langSwitch: "Switch to Vietnamese",
                 introPrefix: "本章節重點：",
-                scorePrefix: "您的得分："
+                scorePrefix: "您的得分：",
+                resetProgress: "重置學習進度"
             },
             vn: {
                 appTitle: "Đào tạo quy trình SOP",
@@ -234,7 +239,8 @@
                 retryBtn: "Làm lại",
                 langSwitch: "切換回繁體中文",
                 introPrefix: "Trọng tâm chương này:",
-                scorePrefix: "Điểm của bạn:"
+                scorePrefix: "Điểm của bạn:",
+                resetProgress: "Đặt lại tiến độ"
             }
         };
 
@@ -611,220 +617,6 @@
                         { item: "Phản hồi cải thiện", time: "Sớm nhất sau kiểm hàng" }
                     ],
                     quiz: [
-                        { q: "誰負責安排客人的驗貨時間？", options: ["品管", "生管", "業務"], a: 2 },
-                        { q: "驗貨範疇通常不包含下列哪項？", options: ["外觀", "員工薪資", "包裝"], a: 1 }
-                    ]
-                },
-                {
-                    id: 7,
-                    title: "第七章：BOOKING & 出貨流程",
-                    purpose: "確保大貨準時出貨，並正確完成文件與系統更新。",
-                    intro: "物流與文件處理流程。確保貨物上船且文件（Inv/PL/BL）準確無誤。",
-                    steps: [
-                        { title: "訂艙 (BOOKING)", desc: "進出口部門依出貨計劃訂艙，確認艙位/船期。" },
-                        { title: "出貨檢查", desc: "成品倉檢查包裝、標籤、箱數。業務/品管確認無誤。" },
-                        { title: "文件製作", desc: "製作 Invoice, Packing List, B/L。與客人確認內容。" },
-                        { title: "系統更新", desc: "出貨後更新系統，通知客人並提供文件。" }
-                    ],
-                    roles: [
-                        { role: "進出口部門", responsibility: "訂艙、製作文件" },
-                        { role: "成品倉", responsibility: "出貨檢查、裝櫃" },
-                        { role: "業務", responsibility: "確認文件內容、通知客人" }
-                    ],
-                    timeData: [
-                        { item: "訂艙 (Booking)", time: "依出貨計劃提前安排" },
-                        { item: "文件確認 (Inv/PL)", time: "出貨前確認" },
-                        { item: "系統出貨更新", time: "出貨完成後" }
-                    ],
-                    quiz: [
-                        { q: "訂艙 (BOOKING) 主要由哪個部門負責？", options: ["業務部", "進出口部門", "採購部"], a: 1 }
-                    ]
-                },
-                {
-                    id: 8,
-                    title: "第八章：貨款追蹤 & 客訴",
-                    purpose: "確保貨款回收，並有效處理客訴以避免重複發生。",
-                    intro: "售後服務與財務閉環。重點在於依合約追款與客訴的根本原因分析（Root Cause Analysis）。",
-                    steps: [
-                        { title: "貨款追蹤", desc: "依合約 (T/T, L/C) 追蹤。逾期未付需提醒客人並上報。" },
-                        { title: "客訴建立", desc: "收到反饋 -> 業務建立客訴單。" },
-                        { title: "調查與改善", desc: "品管/生產調查原因 -> 提出改善方案 -> 業務回覆客人。" },
-                        { title: "改善追蹤", desc: "後續訂單驗證是否解決問題。" }
-                    ],
-                    roles: [
-                        { role: "業務", responsibility: "追蹤貨款、建立客訴單" },
-                        { role: "品管", responsibility: "調查原因、追蹤改善" },
-                        { role: "財務", responsibility: "確認帳款狀態" }
-                    ],
-                    timeData: [
-                        { item: "貨款追蹤", time: "依合約期限 (T/T, L/C)" },
-                        { item: "客訴單建立", time: "收到客訴後即時" },
-                        { item: "改善追蹤", time: "後續訂單持續驗證" }
-                    ],
-                    quiz: [
-                        { q: "收到客人客訴後，業務的第一個動作是？", options: ["立即退款", "建立客訴單", "責罵產線"], a: 1 },
-                        { q: "貨款追蹤主要依據什麼條件？", options: ["口頭約定", "合約條件", "天氣狀況"], a: 1 }
-                    ]
-                }
-            ],
-            vn: [
-                {
-                    id: 1,
-                    title: "Chương 1: Quy trình xử lý mẫu Sales",
-                    purpose: "Đảm bảo mẫu Sales hoàn thành đúng hạn, đạt chất lượng và lưu trữ dữ liệu.",
-                    intro: "Chương này bao gồm quy trình từ khi nhận yêu cầu đến khi gửi mẫu, tập trung vào sự phối hợp giữa Sales và Phòng mẫu.",
-                    steps: [
-                        { title: "Theo dõi tiến độ", desc: "Sales xác nhận tiến độ với Phòng mẫu hàng tuần, báo cáo cho Dev và Khách." },
-                        { title: "Thông tin đóng gói", desc: "Sales cung cấp thông tin đóng gói (Thẻ bài / Túi PE)." },
-                        { title: "Chứng từ & Booking", desc: "Xác nhận Invoice & PL với XNK, hoàn tất Booking." },
-                        { title: "Xuất hàng & Bàn giao", desc: "Phòng mẫu dán tem, XNK xuất hàng. Bìa rập giao cho MC làm định mức." }
-                    ],
-                    roles: [
-                        { role: "Sales", responsibility: "Theo dõi tiến độ, cung cấp thông tin" },
-                        { role: "Phòng mẫu", responsibility: "Hoàn thiện mẫu, bàn giao rập" },
-                        { role: "XNK", responsibility: "Chuẩn bị chứng từ, xuất hàng" }
-                    ],
-                    timeData: [
-                        { item: "Theo dõi tiến độ", time: "Hàng tuần (Weekly)" },
-                        { item: "Thông tin đóng gói", time: "Trước khi xong mẫu" },
-                        { item: "Booking", time: "Xác nhận trước khi xuất" }
-                    ],
-                    quiz: [
-                        { q: "Bìa rập mẫu Sales cuối cùng giao cho ai?", options: ["Sales", "Vật tư (MC)", "Dev"], a: 1 },
-                        { q: "Ai cung cấp thông tin đóng gói?", options: ["Phòng mẫu", "Sales", "Thu mua"], a: 1 }
-                    ]
-                },
-                {
-                    id: 2,
-                    title: "Chương 2: Quy trình làm mẫu thử (Trial)",
-                    purpose: "Đảm bảo giày mới được thử nghiệm đầy đủ (T1-T4) trước khi sản xuất đại trà.",
-                    intro: "Quy trình thử nghiệm là chìa khóa. Chương này giải thích chi tiết các giai đoạn T1-T4.",
-                    steps: [
-                        { title: "Đơn dự kiến & Sắp xếp", desc: "Nhận Forecast, báo PMC sắp xếp mẫu thử." },
-                        { title: "T1 (MF/Fitting)", desc: "Làm mẫu size chuẩn. Khách xác nhận -> làm mẫu nội bộ." },
-                        { title: "T2 (EX Fitting)", desc: "Làm mẫu nhảy size (Đại/Trung/Tiểu)." },
-                        { title: "T3 (Full Size)", desc: "Làm mẫu full size để kiểm chứng sản xuất." },
-                        { title: "T4 (PPT/Hộp đầu)", desc: "Làm mẫu PPT, xác nhận lần cuối với khách." }
-                    ],
-                    roles: [
-                        { role: "Sales", responsibility: "Nhận Forecast, theo dõi khuôn" },
-                        { role: "PMC", responsibility: "Sắp xếp lịch, cung cấp tiến độ" },
-                        { role: "Phòng mẫu", responsibility: "Thực hiện T1-T4" }
-                    ],
-                    timeData: [
-                        { item: "Thông báo Forecast", time: "Ngay khi nhận được" },
-                        { item: "T1 (MF/Fitting)", time: "Theo lịch PMC" },
-                        { item: "T2 (EX Fitting)", time: "Theo lịch PMC" },
-                        { item: "T3 (Full Size)", time: "Theo lịch PMC" },
-                        { item: "T4 (PPT)", time: "Xong trước khi SX đại trà" }
-                    ],
-                    quiz: [
-                        { q: "Giai đoạn nào làm mẫu 'Full size'?", options: ["T1", "T2", "T3"], a: 2 },
-                        { q: "T1 chủ yếu xác nhận gì?", options: ["Full size", "Size chuẩn MF", "Hộp đầu"], a: 1 }
-                    ]
-                },
-                {
-                    id: 3,
-                    title: "Chương 3: Quy trình xử lý đơn hàng",
-                    purpose: "Đảm bảo đơn hàng nhập hệ thống chính xác, hoàn tất BOM và Thu mua.",
-                    intro: "Chuyển đổi từ dự báo sang đơn hàng chính thức, nhấn mạnh tính chính xác của BOM.",
-                    steps: [
-                        { title: "Quản lý đơn dự kiến", desc: "Theo dõi Forecast. Tổng hợp và thảo luận mua vật tư." },
-                        { title: "BOM Ready", desc: "Hoàn tất đối chiếu BOM trước khi nhận đơn chính thức." },
-                        { title: "Xử lý đơn chính thức", desc: "Nhập hệ thống -> Làm BOM -> Tạo kế hoạch mua -> Phát PO." },
-                        { title: "Chi phí khuôn dao", desc: "Tính toán chi phí gửi khách và theo dõi thanh toán." }
-                    ],
-                    roles: [
-                        { role: "Sales", responsibility: "Check BOM, nhập đơn" },
-                        { role: "Dev", responsibility: "Hoàn tất dữ liệu EPR" },
-                        { role: "Thu mua", responsibility: "Đặt hàng theo PO" }
-                    ],
-                    timeData: [
-                        { item: "Theo dõi Forecast", time: "2-3 tuần sau mẫu Sales" },
-                        { item: "BOM Ready", time: "2 tuần trước đơn chính thức" },
-                        { item: "Nhập đơn hàng", time: "Trong 1 ngày" },
-                        { item: "Làm BOM", time: "Trong 1 ngày" },
-                        { item: "Lập PO", time: "Trong 1 ngày" }
-                    ],
-                    quiz: [
-                        { q: "BOM Ready cần xong khi nào?", options: ["Trước xuất hàng 1 tuần", "Trước đơn chính thức 2 tuần", "Khi sản xuất"], a: 1 },
-                        { q: "Nhập đơn chính thức cần xong trong bao lâu?", options: ["1 ngày", "3 ngày", "1 tuần"], a: 0 }
-                    ]
-                },
-                {
-                    id: 4,
-                    title: "Chương 4: Quản lý thu mua",
-                    purpose: "Đảm bảo vật tư về đúng hạn, đúng chất lượng, xử lý khiếu nại.",
-                    intro: "Nắm vững Lead Time vật tư là cốt lõi để Sales và Thu mua phối hợp, tránh ngừng chuyền.",
-                    steps: [
-                        { title: "Lập kế hoạch mua", desc: "Dựa trên BOM và tồn kho." },
-                        { title: "Bảng màu & Mẫu đối", desc: "Sales cung cấp bảng màu/mẫu đối cho NCC." },
-                        { title: "Kiểm soát giao hàng", desc: "Vải: 25-30 ngày; Da: 30-35 ngày. Về trước khi gò." },
-                        { title: "Khiếu nại & Test", desc: "Kho báo cáo kiểm hàng, Sales hỗ trợ khiếu nại." }
-                    ],
-                    roles: [
-                        { role: "Sales", responsibility: "Cung cấp màu/mẫu đối" },
-                        { role: "Thu mua", responsibility: "Mua hàng, kiểm soát tiến độ" },
-                        { role: "Kho", responsibility: "Báo cáo kiểm vật tư" }
-                    ],
-                    timeData: [
-                        { item: "Lead time Vải/Phụ liệu", time: "25 - 30 ngày" },
-                        { item: "Lead time Da", time: "30 - 35 ngày" },
-                        { item: "Vật tư nội địa về xưởng", time: "25 ngày trước khi gò" },
-                        { item: "Vật tư ngoại về xưởng", time: "30 ngày trước khi gò" }
-                    ],
-                    quiz: [
-                        { q: "Lead time của Da là bao lâu?", options: ["10-15 ngày", "20-25 ngày", "30-35 ngày"], a: 2 },
-                        { q: "Vật tư ngoại cần về trước Gò bao lâu?", options: ["10 ngày", "15 ngày", "30 ngày"], a: 2 }
-                    ]
-                },
-                {
-                    id: 5,
-                    title: "Chương 5: Sản xuất đại trà",
-                    purpose: "Đảm bảo sản xuất đúng tiến độ và xử lý bất thường.",
-                    intro: "Trọng tâm là dòng chảy thông tin, đặc biệt là báo cáo và xử lý bất thường kịp thời.",
-                    steps: [
-                        { title: "Xác nhận lịch xuất", desc: "Sales và PMC xác nhận, trả lời khách." },
-                        { title: "Chi tiết sản xuất", desc: "Sales xử lý bảng chi tiết sản xuất trên hệ thống." },
-                        { title: "Tiến độ & Bất thường", desc: "PMC theo dõi. Bất thường nghiêm trọng phải báo khách." },
-                        { title: "Bàn giao sản lượng", desc: "Sản xuất xong -> PMC xác nhận -> Chuyển kho thành phẩm." }
-                    ],
-                    roles: [
-                        { role: "Sales", responsibility: "Xác nhận lịch xuất, điều phối" },
-                        { role: "PMC", responsibility: "Theo dõi tiến độ, báo lỗi" },
-                        { role: "Sản xuất", responsibility: "Sản xuất, báo cáo lỗi" }
-                    ],
-                    timeData: [
-                        { item: "Theo dõi tiến độ", time: "Hàng ngày (Daily)" },
-                        { item: "Xác nhận lịch xuất", time: "Sau khi PMC xếp lịch" },
-                        { item: "Báo cáo bất thường", time: "Ngay lập tức" }
-                    ],
-                    quiz: [
-                        { q: "Khi có lỗi nghiêm trọng ảnh hưởng giao hàng, cần làm gì?", options: ["Không báo", "Chỉ báo quản đốc", "Báo khách và đề xuất kế hoạch"], a: 2 }
-                    ]
-                },
-                {
-                    id: 6,
-                    title: "Chương 6: Quy trình kiểm hàng",
-                    purpose: "Đảm bảo chất lượng xuất hàng thông qua kiểm hàng nội bộ và khách.",
-                    intro: "Kiểm hàng là chốt chặn cuối cùng. Sales chịu trách nhiệm sắp xếp lịch và xử lý lỗi nặng.",
-                    steps: [
-                        { title: "Lịch kiểm hàng", desc: "Sales sắp xếp lịch với khách dựa trên thông tin kho." },
-                        { title: "Tiêu chuẩn", desc: "Dựa trên AQL. Kiểm ngoại quan, chức năng, đóng gói." },
-                        { title: "Xử lý hàng lỗi", desc: "Sửa lại hoặc bù keo. Lỗi nặng Sales phải báo khách." },
-                        { title: "Báo cáo", desc: "Khách xuất báo cáo, Sales tổng hợp cải thiện." }
-                    ],
-                    roles: [
-                        { role: "Sales", responsibility: "Xếp lịch, phản hồi lỗi nặng" },
-                        { role: "QC/QA", responsibility: "Kiểm hàng, theo dõi sửa" },
-                        { role: "Kho TP", responsibility: "Chuẩn bị phòng kiểm" }
-                    ],
-                    timeData: [
-                        { item: "Sắp xếp lịch kiểm", time: "Theo báo cáo đóng gói" },
-                        { item: "Báo lỗi nghiêm trọng", time: "Ngay lập tức" },
-                        { item: "Phản hồi cải thiện", time: "Sớm nhất sau kiểm hàng" }
-                    ],
-                    quiz: [
                         { q: "Ai sắp xếp lịch kiểm hàng?", options: ["QC", "PMC", "Sales"], a: 2 },
                         { q: "Kiểm hàng thường KHÔNG gồm?", options: ["Ngoại quan", "Lương công nhân", "Đóng gói"], a: 1 }
                     ]
@@ -887,6 +679,7 @@
         let currentLang = 'zh';
         let currentChapterIdx = 0;
         let activeTab = 'content';
+        let completedChapters = new Set(); // Stores indices of chapters with perfect quiz score
 
         // --- DOM Elements ---
         const els = {
@@ -916,6 +709,7 @@
 
         // --- Initialization ---
         function init() {
+            loadProgress();
             renderSidebar();
             renderChapter();
             updateUIText();
@@ -981,6 +775,44 @@
             });
         }
 
+        // --- Local Storage Progress ---
+        function loadProgress() {
+            const savedData = localStorage.getItem('sopProgress');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    currentChapterIdx = parsed.chapter || 0;
+                    if (parsed.completed) {
+                        completedChapters = new Set(parsed.completed);
+                    }
+                } catch (e) {
+                    console.error("Error loading progress", e);
+                }
+            }
+        }
+
+        function saveProgress() {
+            const dataToSave = {
+                chapter: currentChapterIdx,
+                completed: Array.from(completedChapters)
+            };
+            localStorage.setItem('sopProgress', JSON.stringify(dataToSave));
+        }
+        
+        function resetProgress() {
+            if(confirm(currentLang === 'zh' ? "確定要重置所有學習進度嗎？" : "Bạn có chắc chắn muốn đặt lại toàn bộ tiến độ học tập không?")) {
+                localStorage.removeItem('sopProgress');
+                completedChapters.clear();
+                currentChapterIdx = 0;
+                renderSidebar();
+                renderChapter();
+                // Close sidebar on mobile
+                if (window.innerWidth < 768 && !els.sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            }
+        }
+
         function renderSidebar() {
             const data = sopData[currentLang];
             els.navList.innerHTML = '';
@@ -988,16 +820,28 @@
             data.forEach((chapter, idx) => {
                 const btn = document.createElement('button');
                 const isActive = idx === currentChapterIdx;
+                const isCompleted = completedChapters.has(idx);
+                
+                let iconClass = isActive ? 'text-blue-600' : 'text-gray-400';
+                let iconHtml = '<i class="fas fa-file-alt"></i>';
+                
+                if (isCompleted) {
+                    iconClass = 'text-green-500';
+                    iconHtml = '<i class="fas fa-check-circle"></i>';
+                }
+
                 btn.className = `w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 ${isActive ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600 shadow-sm' : 'hover:bg-gray-100 text-gray-600 hover:translate-x-1'}`;
                 btn.onclick = () => {
                     currentChapterIdx = idx;
+                    saveProgress(); // Save current chapter location
                     renderSidebar();
                     renderChapter();
                     // Auto-close sidebar on mobile only
                     if (window.innerWidth < 768) toggleSidebar();
                 };
+                
                 btn.innerHTML = `
-                    <div class="${isActive ? 'text-blue-600' : 'text-gray-400'}"><i class="fas fa-file-alt"></i></div>
+                    <div class="${iconClass}">${iconHtml}</div>
                     <span class="font-medium text-sm line-clamp-1">${chapter.title}</span>
                 `;
                 els.navList.appendChild(btn);
@@ -1152,6 +996,13 @@
             if (score === currentQuiz.length) {
                 els.scoreMsg.textContent = currentLang === 'zh' ? "太棒了！滿分！🎉" : "Tuyệt vời! Điểm tuyệt đối! 🎉";
                 els.scoreMsg.className = "text-green-600 font-bold text-lg";
+                
+                // Mark as completed if perfect score
+                if (!completedChapters.has(currentChapterIdx)) {
+                    completedChapters.add(currentChapterIdx);
+                    saveProgress();
+                    renderSidebar(); // Update sidebar checkmark
+                }
             } else if (score >= currentQuiz.length / 2) {
                 els.scoreMsg.textContent = currentLang === 'zh' ? "不錯喔，再接再厲！👍" : "Tốt lắm, hãy cố gắng thêm! 👍";
                 els.scoreMsg.className = "text-blue-600 font-bold text-lg";
